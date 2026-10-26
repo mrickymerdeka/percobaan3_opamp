@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulator Op-Amp Summing Inverting — Percobaan 3</title>
+<style>
+/* ============ RESET & BASE ============ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #ffffff;            /* page bg white */
+  --bg-section: #f8fafc;    /* light gray for header bg */
+  --card: #ffffff;          /* white panel surface */
+  --panel-inner: #f8fafc;  /* very light gray inner panel */
+  --header-fill: #1e3a5f;  /* dark blue for table header (good contrast on white) */
+  --border: #cbd5e1;        /* slate-300 for borders */
+  --accent: #0891b2;        /* cyan-700 - darker for contrast on white */
+  --accent-2: #0284c7;      /* sky-700 */
+  --text-primary: #0f172a;  /* slate-900 - near black */
+  --text-muted: #64748b;    /* slate-500 */
+  --led-red: #dc2626;       /* red-600 - dark enough for white theme */
+  --led-bg: #1a0808;        /* keep dark for LED display look */
+  --led-bezel: #3f0808;
+  --led-caption: #991b1b;   /* red-800 for caption on dark LED bg */
+  --wire: #334155;          /* slate-700 - dark wires for visibility on white */
+  --green: #16a34a;         /* green-600 */
+  --amber: #d97706;         /* amber-600 */
+  --maxw: 1100px;
+}
+html, body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+body { padding: 0 0 60px 0; }
+.container { max-width: var(--maxw); margin: 0 auto; padding: 20px 24px; }
+.mono { font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; }
+
+/* ============ HEADER ============ */
+.app-header {
+  background: var(--bg-section);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 2px 8px rgba(15,23,42,0.08);
+}
+.app-header .inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex; align-items: center; gap: 14px;
+}
+.app-header .accent-bar {
+  width: 4px; height: 44px; background: var(--accent); border-radius: 2px;
+}
+.app-header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-primary); }
+.app-header .subtitle { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.app-header .badge {
+  margin-left: auto;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 4px 10px; border-radius: 12px;
+  background: rgba(8,145,178,0.08);
+}
+
+/* ============ SECTION ============ */
+.section {
+  margin-top: 28px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 28px;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+}
+.section h2 {
+  font-size: 16px; font-weight: 700; color: var(--accent);
+  margin-bottom: 6px; letter-spacing: 0.3px;
+}
+.section .subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; }
+.section h3 {
+  font-size: 13.5px; font-weight: 600; color: var(--text-primary);
+  margin-top: 18px; margin-bottom: 8px;
+}
+
+/* ============ CIRCUIT CARD ============ */
+.circuit-card {
+  background: var(--panel-inner);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.circuit-card svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+}
+
+/* ============ GRID PANELS ============ */
+.panels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+@media (max-width: 720px) {
+  .panels-grid { grid-template-columns: 1fr; }
+}
+.panel {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px 18px 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+}
+.panel::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+}
+.panel.v-inputs::before { background: var(--accent); }
+.panel.r-values::before { background: var(--accent-2); }
+.panel h3 {
+  font-size: 13px; font-weight: 700; color: var(--text-primary);
+  margin: 0 0 2px 8px;
+}
+.panel .panel-sub {
+  font-size: 11px; color: var(--text-muted); margin: 0 0 12px 8px;
+}
+
+.input-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(148,163,184,0.4);
+}
+.input-row:last-child { border-bottom: none; }
+.input-row label {
+  flex: 0 0 32px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 13px;
+  color: var(--text-primary);
+  text-align: right;
+}
+.input-row label.eq::after { content: ' ='; color: var(--text-muted); font-weight: 400; }
+.input-row input[type="number"] {
+  flex: 1 1 auto;
+  width: 100%;
+  background: #ffffff;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input-row input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(8,145,178,0.2);
+}
+.input-row input[type="number"]::-webkit-outer-spin-button,
+.input-row input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+.input-row input[type="number"] { -moz-appearance: textfield; }
+.input-row .unit {
+  flex: 0 0 auto;
+  font-size: 12px; color: var(--text-muted);
+  font-style: italic; min-width: 30px;
+}
+
+/* ============ PRESET BUTTONS ============ */
+.presets {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 14px 0 18px 0;
+}
+.preset-btn {
+  background: #ffffff;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 7px 14px;
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.preset-btn:hover { background: rgba(8,145,178,0.12); }
+.preset-btn.secondary {
+  background: #ffffff;
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+.preset-btn.secondary:hover { background: rgba(2,132,199,0.12); }
+.preset-btn.danger {
+  background: #ffffff;
+  color: var(--led-red);
+  border-color: var(--led-red);
+}
+.preset-btn.danger:hover { background: rgba(220,38,38,0.12); }
+
+/* ============ DIGITAL VOUT DISPLAY ============ */
+.vout-display {
+  background: var(--led-bg);
+  border: 1.5px solid var(--led-red);
+  border-radius: 8px;
+  padding: 18px 22px;
+  position: relative;
+  display: flex; align-items: center; gap: 18px;
+  box-shadow: inset 0 0 30px rgba(220,38,38,0.18), 0 2px 6px rgba(0,0,0,0.1);
+}
+.vout-display::before {
+  content: 'DIGITAL VOLTMETER — OUTPUT';
+  position: absolute; top: 6px; left: 14px;
+  font-size: 8.5px; font-weight: 700; letter-spacing: 1px;
+  color: var(--led-caption);
+}
+.vout-display .vout-label {
+  flex: 0 0 auto;
+  font-size: 16px; font-weight: 700;
+  color: var(--led-red);
+  margin-top: 8px;
+}
+.vout-display .vout-value {
+  flex: 1 1 auto;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 48px;
+  color: var(--led-red);
+  text-align: center;
+  text-shadow: 0 0 12px rgba(239,68,68,0.6);
+  letter-spacing: 2px;
+  margin-top: 4px;
+  line-height: 1;
+}
+.vout-display .vout-status {
+  flex: 0 0 auto;
+  min-width: 120px;
+  text-align: center;
+}
+.vout-display .status-label {
+  font-size: 8.5px; font-weight: 700; letter-spacing: 1px;
+  color: var(--led-caption);
+  margin-bottom: 4px;
+}
+.vout-display .status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.4px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid currentColor;
+  background: rgba(0,0,0,0.3);
+}
+.vout-display .status-badge.normal { color: var(--green); }
+.vout-display .status-badge.sat-pos { color: var(--led-red); }
+.vout-display .status-badge.sat-neg { color: var(--led-red); }
+.vout-display .status-badge.error { color: var(--amber); }
+
+/* ============ CALC BREAKDOWN ============ */
+.calc-breakdown {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.calc-breakdown .step { margin-bottom: 4px; }
+.calc-breakdown .step b { color: var(--accent); font-weight: 700; }
+.calc-breakdown .step .val { color: var(--text-primary); font-weight: 700; }
+.calc-breakdown .step .arrow { color: var(--text-muted); margin: 0 8px; }
+
+/* ============ FORMULA & TABLE ============ */
+.formula-box {
+  background: #f0f9fa;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 14px 0;
+  text-align: center;
+  font-family: 'JetBrains Mono', 'Times New Roman', serif;
+  font-size: 15px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.formula-box small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 6px;
+  font-family: 'Inter', sans-serif;
+}
+.example-table {
+  width: 100%; border-collapse: collapse;
+  margin-top: 12px; font-size: 12.5px;
+}
+.example-table th, .example-table td {
+  padding: 8px 10px; text-align: left;
+  border: 1px solid var(--border);
+}
+.example-table th {
+  background: var(--header-fill);
+  color: #fff; font-weight: 700;
+  font-size: 12px;
+}
+.example-table td { color: var(--text-primary); }
+.example-table tr:nth-child(even) td { background: #f8fafc; }
+
+/* ============ INTERACTIVE TABLE ============ */
+.interactive-table {
+  width: 100%; border-collapse: collapse;
+  margin-top: 12px; font-size: 12.5px;
+}
+.interactive-table th, .interactive-table td {
+  padding: 8px 10px; text-align: center;
+  border: 1px solid var(--border);
+}
+.interactive-table th {
+  background: var(--header-fill);
+  color: #fff; font-weight: 700; font-size: 11.5px;
+}
+.interactive-table td { color: var(--text-primary); }
+.interactive-table tbody tr {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.interactive-table tbody tr:hover { background: rgba(8,145,178,0.12); }
+.interactive-table tbody tr.active {
+  background: rgba(8,145,178,0.18);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.interactive-table .sat-tag {
+  display: inline-block;
+  background: rgba(239,68,68,0.2);
+  color: var(--led-red);
+  border: 1px solid var(--led-red);
+  padding: 2px 6px; border-radius: 3px;
+  font-size: 10px; font-weight: 700;
+  margin-left: 6px;
+}
+.interactive-table .theoretical { color: var(--text-muted); font-style: italic; }
+.interactive-table .theoretical.has-sat { color: var(--led-red); font-style: normal; font-weight: 700; }
+
+/* ============ NOTE ============ */
+.note {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  background: #f8fafc;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  margin-top: 12px;
+  line-height: 1.6;
+}
+.note b { color: var(--text-primary); }
+
+/* ============ FOOTER ============ */
+.app-footer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 30px 0 0 0;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+
+/* ============ TOAST ============ */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #ffffff;
+  border: 1px solid var(--accent);
+  color: var(--text-primary);
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 12px;
+  box-shadow: 0 6px 20px rgba(15,23,42,0.15);
+  opacity: 0;
+  transition: all 0.25s ease-out;
+  pointer-events: none;
+  z-index: 100;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="app-header">
+  <div class="inner">
+    <div class="accent-bar"></div>
+    <div>
+      <h1>SIMULATOR OP-AMP — SUMMING INVERTING</h1>
+      <div class="subtitle">Modul Praktikum OP-Amp Simulide · Percobaan 3 · Set R1/R2/R3/Rf & V1/V2/V3 untuk menghitung Vout</div>
+    </div>
+    <div class="badge">LIVE INTERACTIVE</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ============ SECTION 1: SIMULATOR ============ -->
+  <section class="section" id="simulator">
+    <h2>Simulator Dashboard</h2>
+    <div class="subtitle">Rangkaian Op-Amp penjumlah membalik (summing inverting amplifier). Ubah nilai pada panel input — Vout dihitung otomatis.</div>
+
+    <!-- Circuit SVG -->
+    <div class="circuit-card">
+      <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="circuit"
+   viewBox="0 0 541.09998 360.79999"
+   version="1.1"
+   sodipodi:docname="summing.svg"
+   width="541.09998"
+   height="360.79999"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs39" />
+  <sodipodi:namedview
+     id="namedview39"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.1305556"
+     inkscape:cx="137.05346"
+     inkscape:cy="180.46936"
+     inkscape:window-width="1820"
+     inkscape:window-height="1032"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="circuit" />
+  <!-- background: outer card light gray, inner panel white -->
+  <rect
+     x="0.40000001"
+     y="0.40000001"
+     width="540"
+     height="360"
+     fill="#f8fafc"
+     stroke="#cbd5e1"
+     stroke-width="0.8"
+     id="rect1"
+     sodipodi:insensitive="true" />
+  <rect
+     x="8.3999996"
+     y="8.3999996"
+     width="524"
+     height="344"
+     fill="#ffffff"
+     id="rect2"
+     sodipodi:insensitive="true" />
+  <!-- title -->
+  <text
+     x="270.39999"
+     y="22.4"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="11px"
+     font-weight="700"
+     fill="#0f172a"
+     id="text2">Rangkaian Op-Amp Summing Inverting</text>
+  <!-- ===== V1, V2, V3 voltage sources (with grounds BELOW, facing DOWN) ===== -->
+  <!-- V1: circle center (50, 290), bottom at y=312 -->
+  <text
+     x="50.400002"
+     y="275.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="9px"
+     fill="#64748b"
+     id="v1-label">1V</text>
+  <circle
+     cx="50.400002"
+     cy="290.39999"
+     r="22"
+     fill="#ffffff"
+     stroke="#0891b2"
+     stroke-width="1.6"
+     id="circle2" />
+  <text
+     x="50.400002"
+     y="285.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0891b2"
+     id="text3">+</text>
+  <text
+     x="50.400002"
+     y="299.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0f172a"
+     id="text4">V1</text>
+  <!-- V1 ground (BELOW, facing DOWN: widest at top, narrowest at bottom) -->
+  <line
+     x1="50.400002"
+     y1="312.39999"
+     x2="50.400002"
+     y2="320.39999"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line4" />
+  <line
+     x1="42.400002"
+     y1="320.39999"
+     x2="58.400002"
+     y2="320.39999"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line5" />
+  <line
+     x1="45.400002"
+     y1="324.39999"
+     x2="55.400002"
+     y2="324.39999"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line6" />
+  <line
+     x1="48.400002"
+     y1="328.39999"
+     x2="52.400002"
+     y2="328.39999"
+     stroke="#334155"
+     stroke-width="1"
+     id="line7" />
+  <!-- V2: circle center (50, 180), bottom at y=202 -->
+  <text
+     x="50.400002"
+     y="165.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="9px"
+     fill="#64748b"
+     id="v2-label">2V</text>
+  <circle
+     cx="50.400002"
+     cy="180.39999"
+     r="22"
+     fill="#ffffff"
+     stroke="#0891b2"
+     stroke-width="1.6"
+     id="circle7" />
+  <text
+     x="50.400002"
+     y="175.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0891b2"
+     id="text7">+</text>
+  <text
+     x="50.400002"
+     y="189.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0f172a"
+     id="text8">V2</text>
+  <!-- V2 ground (BELOW, facing DOWN) -->
+  <line
+     x1="50.400002"
+     y1="202.39999"
+     x2="50.400002"
+     y2="210.39999"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line8" />
+  <line
+     x1="42.400002"
+     y1="210.39999"
+     x2="58.400002"
+     y2="210.39999"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line9" />
+  <line
+     x1="45.400002"
+     y1="214.39999"
+     x2="55.400002"
+     y2="214.39999"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line10" />
+  <line
+     x1="48.400002"
+     y1="218.39999"
+     x2="52.400002"
+     y2="218.39999"
+     stroke="#334155"
+     stroke-width="1"
+     id="line11" />
+  <!-- V3: circle center (50, 70), bottom at y=92 -->
+  <text
+     x="50.400002"
+     y="55.400002"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="9px"
+     fill="#64748b"
+     id="v3-label">3V</text>
+  <circle
+     cx="50.400002"
+     cy="70.400002"
+     r="22"
+     fill="#ffffff"
+     stroke="#0891b2"
+     stroke-width="1.6"
+     id="circle11" />
+  <text
+     x="50.400002"
+     y="65.400002"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0891b2"
+     id="text11">+</text>
+  <text
+     x="50.400002"
+     y="79.400002"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0f172a"
+     id="text12">V3</text>
+  <!-- V3 ground (BELOW, facing DOWN) -->
+  <line
+     x1="50.400002"
+     y1="92.400002"
+     x2="50.400002"
+     y2="100.4"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line12" />
+  <line
+     x1="42.400002"
+     y1="100.4"
+     x2="58.400002"
+     y2="100.4"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line13" />
+  <line
+     x1="45.400002"
+     y1="104.4"
+     x2="55.400002"
+     y2="104.4"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line14" />
+  <line
+     x1="48.400002"
+     y1="108.4"
+     x2="52.400002"
+     y2="108.4"
+     stroke="#334155"
+     stroke-width="1"
+     id="line15" />
+  <!-- ===== wires from sources to resistors (dark on white) ===== -->
+  <line
+     x1="72.400002"
+     y1="290.39999"
+     x2="110.4"
+     y2="290.39999"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line16" />
+  <line
+     x1="72.400002"
+     y1="180.39999"
+     x2="110.4"
+     y2="180.39999"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line17" />
+  <line
+     x1="72.400002"
+     y1="70.400002"
+     x2="110.4"
+     y2="70.400002"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line18" />
+  <!-- ===== R1, R2, R3 zigzag resistors (dark) ===== -->
+  <!-- R1: 110-210, y=290 -->
+  <polyline
+     points="110,290 120,290 128,282 136,298 144,282 152,298 160,282 168,298 176,282 184,298 192,282 200,290 210,290"
+     fill="none"
+     stroke="#334155"
+     stroke-width="1.4"
+     stroke-linecap="round"
+     id="polyline18"
+     transform="translate(0.40000001,0.40000001)" />
+  <text
+     x="160.39999"
+     y="270.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0f172a"
+     id="text18">R1</text>
+  <text
+     x="160.39999"
+     y="312.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="8.5px"
+     fill="#64748b"
+     id="r1-label">10 kΩ</text>
+  <!-- R2: 110-210, y=180 -->
+  <polyline
+     points="110,180 120,180 128,172 136,188 144,172 152,188 160,172 168,188 176,172 184,188 192,172 200,180 210,180"
+     fill="none"
+     stroke="#334155"
+     stroke-width="1.4"
+     stroke-linecap="round"
+     id="polyline19"
+     transform="translate(0.40000001,0.40000001)" />
+  <text
+     x="160.39999"
+     y="160.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0f172a"
+     id="text19">R2</text>
+  <text
+     x="160.39999"
+     y="202.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="8.5px"
+     fill="#64748b"
+     id="r2-label">10 kΩ</text>
+  <!-- R3: 110-210, y=70 -->
+  <polyline
+     points="110,70 120,70 128,62 136,78 144,62 152,78 160,62 168,78 176,62 184,78 192,62 200,70 210,70"
+     fill="none"
+     stroke="#334155"
+     stroke-width="1.4"
+     stroke-linecap="round"
+     id="polyline20"
+     transform="translate(0.40000001,0.40000001)" />
+  <text
+     x="160.39999"
+     y="50.400002"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0f172a"
+     id="text20">R3</text>
+  <text
+     x="160.39999"
+     y="92.400002"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="8.5px"
+     fill="#64748b"
+     id="r3-label">10 kΩ</text>
+  <!-- ===== wires from resistor ends to inverting bus ===== -->
+  <line
+     x1="210.39999"
+     y1="290.39999"
+     x2="240.39999"
+     y2="290.39999"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line20" />
+  <line
+     x1="210.39999"
+     y1="180.39999"
+     x2="240.39999"
+     y2="180.39999"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line21" />
+  <line
+     x1="210.39999"
+     y1="70.400002"
+     x2="240.39999"
+     y2="70.400002"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line22" />
+  <!-- ===== vertical inverting bus at x=240 (dark) ===== -->
+  <line
+     x1="240.39999"
+     y1="70.400002"
+     x2="240.39999"
+     y2="290.39999"
+     stroke="#334155"
+     stroke-width="1.6"
+     id="line23" />
+  <circle
+     cx="240.39999"
+     cy="290.39999"
+     r="3.5"
+     fill="#1e3a5f"
+     id="circle23" />
+  <circle
+     cx="240.39999"
+     cy="180.39999"
+     r="3.5"
+     fill="#1e3a5f"
+     id="circle24" />
+  <circle
+     cx="240.39999"
+     cy="70.400002"
+     r="3.5"
+     fill="#1e3a5f"
+     id="circle25" />
+  <!-- ===== Op-Amp triangle (white fill, dark cyan stroke) ===== -->
+  <!-- Layout: '-' inverting input at TOP-LEFT (y=115), '+' non-inverting at BOTTOM-LEFT (y=200) -->
+  <!-- This way the non-inverting ground can go DOWN below the op-amp (no overlap with triangle interior) -->
+  <polygon
+     points="430,155 300,100 300,210 "
+     fill="#ffffff"
+     stroke="#0891b2"
+     stroke-width="1.8"
+     id="polygon25"
+     transform="translate(0.40000001,0.40000001)" />
+  <text
+     x="308.39999"
+     y="120.4"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="14px"
+     font-weight="700"
+     fill="#dc2626"
+     id="text25">−</text>
+  <text
+     x="308.39999"
+     y="205.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="14px"
+     font-weight="700"
+     fill="#0891b2"
+     id="text26">+</text>
+  <text
+     x="345.39999"
+     y="158.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="8.5px"
+     font-weight="700"
+     fill="#64748b"
+     id="text27">OP-AMP</text>
+  <!-- ===== inverting input wire: from bus (240, 115) to op-amp inverting input (300, 115) ===== -->
+  <line
+     x1="240.39999"
+     y1="115.4"
+     x2="300.39999"
+     y2="115.4"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line27" />
+  <circle
+     cx="240.39999"
+     cy="115.4"
+     r="3.5"
+     fill="#1e3a5f"
+     id="circle27" />
+  <!-- ===== non-inverting input to ground (BELOW op-amp, facing DOWN) ===== -->
+  <!-- Wire from non-inverting input (300, 200) DOWN along left edge to (300, 220), then ground below -->
+  <line
+     x1="280.39999"
+     y1="198.39999"
+     x2="280.39999"
+     y2="218.39999"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line28" />
+  <line
+     x1="300.78217"
+     y1="199.40939"
+     x2="280.78217"
+     y2="199.40939"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line28-6" />
+  <!-- Ground symbol below op-amp: widest at top (y=230, close to op-amp), narrowest at bottom (y=238) -->
+  <line
+     x1="272.39999"
+     y1="218.39999"
+     x2="288.39999"
+     y2="218.39999"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line29" />
+  <line
+     x1="275.39999"
+     y1="222.39999"
+     x2="285.39999"
+     y2="222.39999"
+     stroke="#334155"
+     stroke-width="1.2"
+     id="line30" />
+  <line
+     x1="278.39999"
+     y1="226.39999"
+     x2="282.39999"
+     y2="226.39999"
+     stroke="#334155"
+     stroke-width="1"
+     id="line31" />
+  <!-- ===== V+ and V- supply pins ===== -->
+  <line
+     x1="365.39999"
+     y1="184.39999"
+     x2="365.39999"
+     y2="226.39999"
+     stroke="#0891b2"
+     stroke-width="1.2"
+     id="line32" />
+  <text
+     x="372.39999"
+     y="222.39999"
+     font-family="Inter, sans-serif"
+     font-size="8.5px"
+     font-weight="700"
+     fill="#0891b2"
+     id="text32">V+ = +15V</text>
+  <line
+     x1="365.39999"
+     y1="126.4"
+     x2="365.39999"
+     y2="84.400002"
+     stroke="#0284c7"
+     stroke-width="1.2"
+     id="line33" />
+  <text
+     x="372.39999"
+     y="88.400002"
+     font-family="Inter, sans-serif"
+     font-size="8.5px"
+     font-weight="700"
+     fill="#0284c7"
+     id="text33">V− = −15V</text>
+  <!-- ===== Rf feedback resistor (dark) ===== -->
+  <!-- output to (470,155), up to (470,320), Rf zigzag 350-470 at y=320 -->
+  <line
+     x1="430.39999"
+     y1="155.39999"
+     x2="470.39999"
+     y2="155.39999"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line34" />
+  <line
+     x1="470.39999"
+     y1="155.39999"
+     x2="470.39999"
+     y2="320.39999"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line35" />
+  <!-- Rf zigzag -->
+  <polyline
+     points="350,320 360,320 367,312 374,328 381,312 388,328 395,312 402,328 409,312 416,328 423,312 430,328 437,312 444,328 451,312 458,328 465,320 470,320"
+     fill="none"
+     stroke="#334155"
+     stroke-width="1.4"
+     stroke-linecap="round"
+     id="polyline35"
+     transform="translate(0.40000001,0.40000001)" />
+  <text
+     x="410.39999"
+     y="345.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="10px"
+     font-weight="700"
+     fill="#0f172a"
+     id="text35">Rf</text>
+  <text
+     x="410.39999"
+     y="308.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="8.5px"
+     fill="#64748b"
+     id="rf-label">10 kΩ</text>
+  <!-- continue from Rf left end to bus top -->
+  <line
+     x1="350.39999"
+     y1="320.39999"
+     x2="240.39999"
+     y2="320.39999"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line36" />
+  <line
+     x1="240.39999"
+     y1="320.39999"
+     x2="240.39999"
+     y2="290.39999"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line37" />
+  <circle
+     cx="240.39999"
+     cy="290.39999"
+     r="3.5"
+     fill="#1e3a5f"
+     id="circle37" />
+  <!-- ===== output wire to voltmeter ===== -->
+  <line
+     x1="470.39999"
+     y1="155.39999"
+     x2="510.39999"
+     y2="155.39999"
+     stroke="#334155"
+     stroke-width="1.4"
+     id="line38" />
+  <rect
+     x="510.39999"
+     y="130.39999"
+     width="30"
+     height="50"
+     fill="#ffffff"
+     stroke="#0891b2"
+     stroke-width="1.4"
+     id="rect38" />
+  <text
+     x="525.40002"
+     y="156.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="14px"
+     font-weight="700"
+     fill="#0891b2"
+     id="text38">V</text>
+  <text
+     x="525.40002"
+     y="138.39999"
+     text-anchor="middle"
+     font-family="Inter, sans-serif"
+     font-size="6.5px"
+     fill="#64748b"
+     id="text39"
+     style="-inkscape-font-specification:'Inter, sans-serif, Bold';font-family:Inter, sans-serif;font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;font-size:6.5px;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-anchor:middle;fill:#64748b">Vout</text>
+</svg>
+
+    </div>
+
+    <!-- Preset buttons -->
+    <div class="presets">
+      <button class="preset-btn" data-preset="3.1">Preset Percobaan 3.1 (Rf=10k, A=1)</button>
+      <button class="preset-btn secondary" data-preset="3.2">Preset Percobaan 3.2 (Rf=20k, A=2)</button>
+      <button class="preset-btn danger" data-preset="reset">Reset</button>
+    </div>
+
+    <!-- Input panels -->
+    <div class="panels-grid">
+      <!-- LEFT: Voltage Inputs -->
+      <div class="panel v-inputs">
+        <h3>Tegangan Input</h3>
+        <div class="panel-sub">Sumber tegangan (Volt)</div>
+        <div class="input-row">
+          <label class="eq">V1</label>
+          <input type="number" id="V1" value="1" step="0.1" min="-100" max="100">
+          <span class="unit">Volt</span>
+        </div>
+        <div class="input-row">
+          <label class="eq">V2</label>
+          <input type="number" id="V2" value="2" step="0.1" min="-100" max="100">
+          <span class="unit">Volt</span>
+        </div>
+        <div class="input-row">
+          <label class="eq">V3</label>
+          <input type="number" id="V3" value="3" step="0.1" min="-100" max="100">
+          <span class="unit">Volt</span>
+        </div>
+      </div>
+
+      <!-- RIGHT: Resistor Values -->
+      <div class="panel r-values">
+        <h3>Nilai Resistor</h3>
+        <div class="panel-sub">Resistor (kΩ) — input &amp; feedback</div>
+        <div class="input-row">
+          <label class="eq">R1</label>
+          <input type="number" id="R1" value="10" step="0.1" min="0" max="1000">
+          <span class="unit">kΩ</span>
+        </div>
+        <div class="input-row">
+          <label class="eq">R2</label>
+          <input type="number" id="R2" value="10" step="0.1" min="0" max="1000">
+          <span class="unit">kΩ</span>
+        </div>
+        <div class="input-row">
+          <label class="eq">R3</label>
+          <input type="number" id="R3" value="10" step="0.1" min="0" max="1000">
+          <span class="unit">kΩ</span>
+        </div>
+        <div class="input-row">
+          <label class="eq">Rf</label>
+          <input type="number" id="Rf" value="10" step="0.1" min="0" max="1000">
+          <span class="unit">kΩ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Digital Vout Display -->
+    <div class="vout-display">
+      <div class="vout-label">Vout =</div>
+      <div class="vout-value mono" id="vout-display">-6.000</div>
+      <div class="vout-status">
+        <div class="status-label">STATUS</div>
+        <div class="status-badge normal" id="status-badge">NORMAL</div>
+      </div>
+    </div>
+
+    <!-- Calculation breakdown -->
+    <div class="calc-breakdown" id="calc-breakdown">
+      <div class="step"><b>Rumus:</b> Vout = −(Rf/R1·V1 + Rf/R2·V2 + Rf/R3·V3)</div>
+      <div class="step" id="calc-step-1"></div>
+      <div class="step" id="calc-step-2"></div>
+      <div class="step" id="calc-step-3"></div>
+    </div>
+
+    <div class="note">
+      <b>Catatan:</b> Supply Op-Amp V+ = +15V dan V− = −15V. Jika hasil perhitungan |Vout| &gt; 15V, Op-Amp akan <b>jenuh (saturasi)</b> dan Vout terkunci pada ±15V. Status indicator akan menampilkan "SAT+ (+15V)" atau "SAT− (−15V)".
+    </div>
+  </section>
+
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="app-footer">
+    Simulator Op-Amp Summing Inverting · Modul Praktikum OP-Amp Simulide · Percobaan 3<br>
+    Single-file HTML simulator · Buka di browser modern (Chrome, Firefox, Edge, Safari)
+  </footer>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ CONFIG: Table rows for Percobaan 3.1 & 3.2 ============
+const TABLE_31_ROWS = [
+  { no: 1, v1: 1, v2: 2, v3: 3 },
+  { no: 2, v1: 3, v2: 2, v3: 1 },
+  { no: 3, v1: 5, v2: 4, v3: 3 },
+  { no: 4, v1: 3, v2: 4, v3: 5 },
+  { no: 5, v1: 5, v2: 5, v3: 5 },
+  { no: 6, v1: 6, v2: 6, v3: 6 },
+];
+
+const TABLE_32_ROWS = [
+  { no: 1, v1: 1, v2: 2, v3: 3 },
+  { no: 2, v1: 3, v2: 2, v3: 1 },
+  { no: 3, v1: 5, v2: 4, v3: 3 },
+  { no: 4, v1: 3, v2: 4, v3: 5 },
+  { no: 5, v1: 5, v2: 5, v3: 5 },
+  { no: 6, v1: 6, v2: 6, v3: 6 },
+];
+
+const SUPPLY_LIMIT = 15;  // ±15V saturation
+
+// ============ HELPERS ============
+function fmt3(value) {
+  // Format number with sign + 3 decimals (e.g., -6.000, +5.500)
+  if (!isFinite(value)) return '---.---';
+  var sign = value < 0 ? '-' : (value > 0 ? '+' : ' ');
+  var abs = Math.abs(value);
+  var intPart = Math.floor(abs);
+  var fracPart = Math.round((abs - intPart) * 1000);
+  if (fracPart >= 1000) { intPart += 1; fracPart -= 1000; }
+  var fracStr = String(fracPart);
+  while (fracStr.length < 3) { fracStr = '0' + fracStr; }
+  return sign + intPart + '.' + fracStr;
+}
+
+function parseNum(id) {
+  var el = document.getElementById(id);
+  if (!el) return NaN;
+  var raw = el.value;
+  if (typeof raw === 'string') {
+    raw = raw.replace(',', '.').trim();
+  }
+  var n = parseFloat(raw);
+  return isNaN(n) ? NaN : n;
+}
+
+function setFieldValue(id, value) {
+  var el = document.getElementById(id);
+  if (el) el.value = value;
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.classList.remove('show'); }, 1800);
+}
+
+// ============ MAIN RECALC ============
+function recalcVout() {
+  var V1 = parseNum('V1');
+  var V2 = parseNum('V2');
+  var V3 = parseNum('V3');
+  var R1 = parseNum('R1');
+  var R2 = parseNum('R2');
+  var R3 = parseNum('R3');
+  var Rf = parseNum('Rf');
+
+  var voutDisplay = document.getElementById('vout-display');
+  var statusBadge = document.getElementById('status-badge');
+  var calcStep1 = document.getElementById('calc-step-1');
+  var calcStep2 = document.getElementById('calc-step-2');
+  var calcStep3 = document.getElementById('calc-step-3');
+
+  // Check for invalid input
+  var inputs = [V1, V2, V3, R1, R2, R3, Rf];
+  for (var i = 0; i < inputs.length; i++) {
+    if (isNaN(inputs[i])) {
+      voutDisplay.textContent = '---.---';
+      voutDisplay.style.color = 'var(--led-red)';
+      statusBadge.textContent = 'INPUT ERR';
+      statusBadge.className = 'status-badge error';
+      calcStep1.innerHTML = '<span style="color:#fbbf24">⚠ Salah satu input tidak valid (kosong/bukan angka). Isi semua field.</span>';
+      calcStep2.innerHTML = '';
+      calcStep3.innerHTML = '';
+      updateCircuitLabels();
+      updateTableRowMeasurements();
+      return;
+    }
+  }
+
+  // Check for zero resistors
+  if (R1 === 0 || R2 === 0 || R3 === 0) {
+    voutDisplay.textContent = 'R = 0 ERR';
+    voutDisplay.style.color = 'var(--amber)';
+    statusBadge.textContent = 'DIV ZERO';
+    statusBadge.className = 'status-badge error';
+    calcStep1.innerHTML = '<span style="color:#fbbf24">⚠ Salah satu resistor R1/R2/R3 = 0 — pembagian oleh nol tidak terdefinisi.</span>';
+    calcStep2.innerHTML = '';
+    calcStep3.innerHTML = '';
+    updateCircuitLabels();
+    updateTableRowMeasurements();
+    return;
+  }
+
+  // Calculate using full formula (general case)
+  var a1 = Rf / R1;
+  var a2 = Rf / R2;
+  var a3 = Rf / R3;
+  var rawVout = -(a1 * V1 + a2 * V2 + a3 * V3);
+
+  // Apply saturation clamp
+  var clamped = rawVout;
+  var saturated = false;
+  if (rawVout > SUPPLY_LIMIT) { clamped = SUPPLY_LIMIT; saturated = true; }
+  else if (rawVout < -SUPPLY_LIMIT) { clamped = -SUPPLY_LIMIT; saturated = true; }
+
+  // Update digital display
+  voutDisplay.textContent = fmt3(clamped);
+  voutDisplay.style.color = saturated ? 'var(--amber)' : 'var(--led-red)';
+
+  // Update status badge
+  if (saturated) {
+    if (clamped >= SUPPLY_LIMIT) {
+      statusBadge.textContent = 'SAT+ (+15V)';
+      statusBadge.className = 'status-badge sat-pos';
+    } else {
+      statusBadge.textContent = 'SAT− (−15V)';
+      statusBadge.className = 'status-badge sat-neg';
+    }
+  } else {
+    statusBadge.textContent = 'NORMAL';
+    statusBadge.className = 'status-badge normal';
+  }
+
+  // Update calc breakdown
+  calcStep1.innerHTML = '<b>Langkah 1 — hitung rasio:</b> '
+    + 'Rf/R1 = <span class="val">' + a1.toFixed(3) + '</span>, '
+    + 'Rf/R2 = <span class="val">' + a2.toFixed(3) + '</span>, '
+    + 'Rf/R3 = <span class="val">' + a3.toFixed(3) + '</span>';
+  calcStep2.innerHTML = '<b>Langkah 2 — substitusi:</b> '
+    + 'Vout = −(' + a1.toFixed(3) + '×' + V1 + ' + ' + a2.toFixed(3) + '×' + V2 + ' + ' + a3.toFixed(3) + '×' + V3 + ') '
+    + '= <span class="val">' + rawVout.toFixed(3) + ' V</span>';
+  if (saturated) {
+    calcStep3.innerHTML = '<b>Langkah 3 — saturasi:</b> |' + rawVout.toFixed(3) + '| &gt; ' + SUPPLY_LIMIT + 'V '
+      + '→ Vout dikunci (clamp) pada <span class="val" style="color:#fbbf24">' + fmt3(clamped) + ' V</span>';
+  } else {
+    calcStep3.innerHTML = '<b>Langkah 3 — tidak saturasi:</b> |' + rawVout.toFixed(3) + '| ≤ ' + SUPPLY_LIMIT + 'V '
+      + '→ Vout = <span class="val">' + fmt3(clamped) + ' V</span>';
+  }
+
+  updateCircuitLabels();
+  updateTableRowMeasurements();
+}
+
+// ============ UPDATE CIRCUIT LABELS ============
+function updateCircuitLabels() {
+  var V1 = parseNum('V1');
+  var V2 = parseNum('V2');
+  var V3 = parseNum('V3');
+  var R1 = parseNum('R1');
+  var R2 = parseNum('R2');
+  var R3 = parseNum('R3');
+  var Rf = parseNum('Rf');
+
+  function fmtV(v) { return isFinite(v) ? v + 'V' : '?'; }
+  function fmtR(v) { return isFinite(v) ? v + ' kΩ' : '?'; }
+
+  var v1l = document.getElementById('v1-label'); if (v1l) v1l.textContent = fmtV(V1);
+  var v2l = document.getElementById('v2-label'); if (v2l) v2l.textContent = fmtV(V2);
+  var v3l = document.getElementById('v3-label'); if (v3l) v3l.textContent = fmtV(V3);
+  var r1l = document.getElementById('r1-label'); if (r1l) r1l.textContent = fmtR(R1);
+  var r2l = document.getElementById('r2-label'); if (r2l) r2l.textContent = fmtR(R2);
+  var r3l = document.getElementById('r3-label'); if (r3l) r3l.textContent = fmtR(R3);
+  var rfl = document.getElementById('rf-label'); if (rfl) rfl.textContent = fmtR(Rf);
+}
+
+// ============ TABLE ROW MEASUREMENT UPDATES ============
+// The "Vout pengukuran" column on each interactive table reflects the CURRENT
+// simulator state (i.e., based on whatever R1/R2/R3/Rf is set right now).
+// This shows students that if they don't set Rf correctly, the measurement
+// won't match the theoretical value computed for that table.
+function computeVoutFor(v1, v2, v3) {
+  var R1 = parseNum('R1');
+  var R2 = parseNum('R2');
+  var R3 = parseNum('R3');
+  var Rf = parseNum('Rf');
+  if ([R1,R2,R3,Rf].some(function(n){return isNaN(n) || n===0;})) {
+    return { display: 'ERR', saturated: false, valid: false };
+  }
+  var raw = -(Rf/R1*v1 + Rf/R2*v2 + Rf/R3*v3);
+  var clamped = Math.max(-SUPPLY_LIMIT, Math.min(SUPPLY_LIMIT, raw));
+  var saturated = (clamped !== raw);
+  return { display: fmt3(clamped), saturated: saturated, raw: raw, valid: true };
+}
+
+function theoreticalVoutFor(v1, v2, v3, A) {
+  // For Percobaan 3.1: A=1, Vout = -(v1+v2+v3)
+  // For Percobaan 3.2: A=2, Vout = -2*(v1+v2+v3)
+  var raw = -A * (v1 + v2 + v3);
+  var clamped = Math.max(-SUPPLY_LIMIT, Math.min(SUPPLY_LIMIT, raw));
+  var saturated = (clamped !== raw);
+  return { raw: raw, clamped: clamped, saturated: saturated };
+}
+
+function buildTableRows(tableId, rows, A) {
+  var tbody = document.querySelector('#' + tableId + ' tbody');
+  tbody.innerHTML = '';
+  rows.forEach(function(row) {
+    var tr = document.createElement('tr');
+    tr.dataset.v1 = row.v1;
+    tr.dataset.v2 = row.v2;
+    tr.dataset.v3 = row.v3;
+
+    var theo = theoreticalVoutFor(row.v1, row.v2, row.v3, A);
+
+    tr.innerHTML =
+      '<td>' + row.no + '</td>' +
+      '<td>' + row.v1 + '</td>' +
+      '<td>' + row.v2 + '</td>' +
+      '<td>' + row.v3 + '</td>' +
+      '<td class="measurement">—</td>' +
+      '<td class="theoretical' + (theo.saturated ? ' has-sat' : '') + '">' +
+        (theo.saturated ? fmt3(theo.clamped) + ' <span class="sat-tag">SAT</span>' : fmt3(theo.raw)) +
+        ' <small style="color:#64748b">(' + theo.raw.toFixed(3) + 'V)</small>' +
+      '</td>';
+
+    tr.addEventListener('click', function() {
+      setFieldValue('V1', row.v1);
+      setFieldValue('V2', row.v2);
+      setFieldValue('V3', row.v3);
+      recalcVout();
+      // Highlight active row
+      document.querySelectorAll('.interactive-table tbody tr').forEach(function(r) {
+        r.classList.remove('active');
+      });
+      tr.classList.add('active');
+      // Scroll up to simulator
+      document.getElementById('simulator').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showToast('Baris ' + row.no + ' dimuat: V1=' + row.v1 + ', V2=' + row.v2 + ', V3=' + row.v3);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function updateTableRowMeasurements() {
+  // Update the "Vout pengukuran" column for both tables based on CURRENT R1/R2/R3/Rf values
+  ['table-3-1', 'table-3-2'].forEach(function(tableId) {
+    var rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+    rows.forEach(function(tr) {
+      var v1 = parseFloat(tr.dataset.v1);
+      var v2 = parseFloat(tr.dataset.v2);
+      var v3 = parseFloat(tr.dataset.v3);
+      var result = computeVoutFor(v1, v2, v3);
+      var cell = tr.querySelector('.measurement');
+      if (cell) {
+        if (!result.valid) {
+          cell.innerHTML = '<span style="color:#fbbf24">ERR</span>';
+        } else if (result.saturated) {
+          cell.innerHTML = result.display + ' <span class="sat-tag">SAT</span>';
+        } else {
+          cell.innerHTML = result.display;
+        }
+      }
+    });
+  });
+}
+
+// ============ PRESET BUTTONS ============
+function applyPreset(preset) {
+  if (preset === '3.1') {
+    setFieldValue('R1', 10);
+    setFieldValue('R2', 10);
+    setFieldValue('R3', 10);
+    setFieldValue('Rf', 10);
+    setFieldValue('V1', 1);
+    setFieldValue('V2', 2);
+    setFieldValue('V3', 3);
+    showToast('Preset Percobaan 3.1 dimuat: Rf=10kΩ, A=1');
+  } else if (preset === '3.2') {
+    setFieldValue('R1', 10);
+    setFieldValue('R2', 10);
+    setFieldValue('R3', 10);
+    setFieldValue('Rf', 20);
+    setFieldValue('V1', 1);
+    setFieldValue('V2', 2);
+    setFieldValue('V3', 3);
+    showToast('Preset Percobaan 3.2 dimuat: Rf=20kΩ, A=2');
+  } else if (preset === 'reset') {
+    setFieldValue('R1', 10);
+    setFieldValue('R2', 10);
+    setFieldValue('R3', 10);
+    setFieldValue('Rf', 10);
+    setFieldValue('V1', 1);
+    setFieldValue('V2', 2);
+    setFieldValue('V3', 3);
+    showToast('Reset ke nilai default');
+  }
+  // Clear active row highlighting
+  document.querySelectorAll('.interactive-table tbody tr').forEach(function(r) {
+    r.classList.remove('active');
+  });
+  recalcVout();
+}
+
+// ============ INIT ============
+function init() {
+  // Build interactive tables
+  buildTableRows('table-3-1', TABLE_31_ROWS, 1);   // A=1
+  buildTableRows('table-3-2', TABLE_32_ROWS, 2);   // A=2
+
+  // Attach input listeners
+  ['V1','V2','V3','R1','R2','R3','Rf'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', recalcVout);
+      el.addEventListener('change', recalcVout);
+    }
+  });
+
+  // Attach preset button listeners
+  document.querySelectorAll('.preset-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      applyPreset(btn.dataset.preset);
+    });
+  });
+
+  // Initial calculation
+  recalcVout();
+}
+
+// Wait for DOM
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
